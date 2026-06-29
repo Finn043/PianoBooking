@@ -105,7 +105,10 @@ export default function AdminCalendarPage() {
   };
 
   const groupedSlots = slots.reduce((acc, slot) => {
-    const dateKey = new Date(slot.start_time).toDateString();
+    // Use ISO date string (YYYY-MM-DD) for reliable grouping
+    const dateObj = new Date(slot.start_time);
+    const dateKey = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD format
+
     if (!acc[dateKey]) {
       acc[dateKey] = [];
     }
@@ -148,10 +151,11 @@ export default function AdminCalendarPage() {
         {sortedDates.map((dateKey) => (
           <div key={dateKey}>
             <h3 className="text-lg font-display font-semibold text-ink-900 mb-4">
-              {new Date(dateKey).toLocaleDateString('en-US', {
+              {new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
                 day: 'numeric',
+                year: 'numeric',
               })}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from '@/lib/supabase/client';
 import "../../styles/globals.css";
 
 export default function AdminLayout({
@@ -10,25 +11,37 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
+  const supabase = createClient();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check authentication on client side
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
+    // Check authentication and get user
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session && window.location.pathname !== "/admin/login") {
+        router.push("/admin/login");
+      } else if (session) {
+        setUserEmail(session.user.email || 'Admin');
+      }
     };
 
-    const auth = getCookie("adminAuth");
-    if (!auth && window.location.pathname !== "/admin/login") {
-      router.push("/admin/login");
-    }
-  }, [router]);
+    checkAuth();
 
-  const handleLogout = () => {
-    // Remove auth cookie
-    document.cookie = "adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && window.location.pathname !== "/admin/login") {
+        router.push("/admin/login");
+      } else if (session) {
+        setUserEmail(session.user.email || 'Admin');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, supabase]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push("/admin/login");
   };
 
@@ -93,7 +106,7 @@ export default function AdminLayout({
 
               <div className="flex items-center gap-4">
                 <span className="text-sm text-piano-white/80 hidden sm:block">
-                  Hannah (Admin)
+                  {userEmail || 'Admin'}
                 </span>
                 <button
                   onClick={handleLogout}
