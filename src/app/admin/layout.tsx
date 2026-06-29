@@ -1,16 +1,29 @@
-import type { Metadata } from "next";
-import "../../styles/globals.css";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Admin - Hannah's Piano Class",
-  description: "Admin dashboard for Hannah's Piano Class",
-};
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import "../../styles/globals.css";
 
 export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check authentication on client side
+    const auth = localStorage.getItem("adminAuth");
+    if (!auth && window.location.pathname !== "/admin/login") {
+      router.push("/admin/login");
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    router.push("/admin/login");
+  };
+
   return (
     <html lang="en">
       <body className="bg-surface-100">
@@ -72,16 +85,14 @@ export default function AdminLayout({
 
               <div className="flex items-center gap-4">
                 <span className="text-sm text-piano-white/80 hidden sm:block">
-                  hannah@example.com
+                  Hannah (Admin)
                 </span>
-                <form action="/auth/logout" method="post">
-                  <button
-                    type="submit"
-                    className="text-sm text-piano-white/80 hover:text-piano-white transition-colors"
-                  >
-                    Logout
-                  </button>
-                </form>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-piano-white/80 hover:text-piano-white transition-colors"
+                >
+                  Logout
+                </button>
               </div>
             </div>
 
