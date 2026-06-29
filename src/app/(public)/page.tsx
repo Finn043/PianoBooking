@@ -1,49 +1,62 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { PianoHeader } from "@/components/shared/PianoHeader";
 import { BookingCalendar } from "@/components/calendar/BookingCalendar";
 import { BookingForm } from "@/components/calendar/BookingForm";
 import { CalendarSlot } from "@/types";
 
-async function getAvailableSlots(): Promise<CalendarSlot[]> {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/slots?available=true`, {
-      cache: 'no-store',
-    });
+export default function HomePage() {
+  const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
+  const [slots, setSlots] = useState<CalendarSlot[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    if (!response.ok) {
-      console.error('Failed to fetch slots:', await response.text());
-      return [];
+  useEffect(() => {
+    fetchAvailableSlots();
+  }, []);
+
+  const fetchAvailableSlots = async () => {
+    try {
+      const response = await fetch('/api/slots?available=true');
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        setSlots(result.data.map((s: any) => ({
+          id: s.id,
+          start: new Date(s.start),
+          end: new Date(s.end),
+          available: s.available,
+          title: s.title,
+          status: s.status,
+          studentName: s.studentName,
+          studentEmail: s.studentEmail,
+          packageName: s.packageName,
+          isRecurring: s.isRecurring,
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching slots:', error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const result = await response.json();
-
-    if (!result.success || !result.data) {
-      return [];
+  const handleSlotSelect = (slot: CalendarSlot) => {
+    setSelectedSlot(slot);
+    // Refresh slots after booking
+    if (slot.available) {
+      fetchAvailableSlots();
     }
+  };
 
-    // Transform API data to CalendarSlot format
-    return result.data.map((slot: any) => ({
-      id: slot.id,
-      start: new Date(slot.start),
-      end: new Date(slot.end),
-      available: slot.available,
-      title: slot.title,
-      status: slot.status,
-      studentName: slot.studentName,
-      studentEmail: slot.studentEmail,
-      packageName: slot.packageName,
-      isRecurring: slot.isRecurring,
-    }));
-  } catch (error) {
-    console.error('Error fetching slots:', error);
-    return [];
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-piano-accent border-t-transparent rounded-full"></div>
+      </div>
+    );
   }
-}
 
-export default async function HomePage() {
-  const slots = await getAvailableSlots();
-
-  // Client component for interactivity
   return (
     <main>
       {/* Hero Header */}
@@ -62,8 +75,22 @@ export default async function HomePage() {
         </div>
 
         {/* Calendar */}
-        <BookingPageContent initialSlots={slots} />
+        <div className="bg-piano-white rounded-lg border border-muted shadow-md p-4 md:p-6">
+          <BookingCalendar
+            initialSlots={slots}
+            onSlotSelect={handleSlotSelect}
+          />
+        </div>
       </div>
+
+      {/* Booking Modal */}
+      {selectedSlot && (
+        <BookingForm
+          slot={selectedSlot}
+          userTimezone="Australia/Sydney"
+          onClose={() => setSelectedSlot(null)}
+        />
+      )}
 
       {/* Footer */}
       <footer className="bg-piano-black text-piano-white py-8 mt-16">
@@ -77,54 +104,5 @@ export default async function HomePage() {
         </div>
       </footer>
     </main>
-  );
-}
-
-// Client component for interactivity
-function BookingPageContent({ initialSlots }: { initialSlots: CalendarSlot[] }) {
-  const [selectedSlot, setSelectedSlot] = React.useState<CalendarSlot | null>(null);
-  const [slots, setSlots] = React.useState(initialSlots);
-
-  return (
-    <>
-      <div className="bg-piano-white rounded-lg border border-muted shadow-md p-4 md:p-6">
-        <BookingCalendar
-          initialSlots={slots}
-          onSlotSelect={(slot) => {
-            setSelectedSlot(slot);
-            // Refresh slots after booking
-            if (slot.available) {
-              fetch('/api/slots?available=true')
-                .then(res => res.json())
-                .then(result => {
-                  if (result.success && result.data) {
-                    setSlots(result.data.map((s: any) => ({
-                      id: s.id,
-                      start: new Date(s.start),
-                      end: new Date(s.end),
-                      available: s.available,
-                      title: s.title,
-                      status: s.status,
-                      studentName: s.studentName,
-                      studentEmail: s.studentEmail,
-                      packageName: s.packageName,
-                      isRecurring: s.isRecurring,
-                    })));
-                  }
-                });
-            }
-          }}
-        />
-      </div>
-
-      {/* Booking Modal */}
-      {selectedSlot && (
-        <BookingForm
-          slot={selectedSlot}
-          userTimezone="Australia/Sydney"
-          onClose={() => setSelectedSlot(null)}
-        />
-      )}
-    </>
   );
 }
