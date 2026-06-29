@@ -31,8 +31,6 @@ export default function LoginPage() {
       }
 
       if (data.session) {
-        // Store session token in cookie for middleware
-        document.cookie = `adminAuth=true; path=/; max-age=86400`;
         router.push("/admin/dashboard");
       }
     } catch (err) {
