@@ -93,17 +93,23 @@ export default function AdminPage() {
 # Correct: .supabase/functions/send-booking-email/
 ```
 
-### ❌ Calendar Page "Application error"
-**Cause:** API format mismatch - `/api/slots` returns camelCase (`start`, `end`) but calendar page expects snake_case (`start_time`, `end_time`).
+### ❌ Calendar/Public Page "Application error"
+**Cause:** API format mismatch - `/api/slots` returns camelCase (`start`, `end`) but pages expect snake_case (`start_time`, `end_time`) matching database columns.
 
-**Solution:** Ensure API returns correct field names:
+**Solution:** Ensure all pages use correct database field names:
 ```typescript
 // ✅ Correct: Match database column names
 { start_time, end_time, is_available }
 
-// ❌ Wrong: Different from what frontend expects
+// ❌ Wrong: Different from database
 { start, end, available }
 ```
+
+**Affected files when API format changes:**
+- `src/app/admin/calendar/page.tsx` - expects `{ start_time, end_time, is_available }`
+- `src/app/(public)/page.tsx` - expects `{ start_time, end_time, is_available }`
+
+**Important:** When modifying `/api/slots`, ensure consistency across all consumers.
 
 ### ❌ RLS Policies Blocking Service Role
 **Cause:** Missing policies for service role access on `students`, `bookings`, `slots`.
