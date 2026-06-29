@@ -93,13 +93,12 @@ export async function POST(request: NextRequest) {
     if (existingStudent) {
       studentId = existingStudent.id;
     } else {
-      // Create new student
+      // Create new student (without package dependency for now)
       const { data: newStudent, error: studentError } = await supabaseAdmin
         .from('students')
         .insert({
           name: studentName,
           email: studentEmail,
-          package_id: packageId || null,
           remaining_sessions: 0,
           total_purchased: 0,
         })
