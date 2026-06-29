@@ -13,14 +13,22 @@ export default function AdminLayout({
 
   useEffect(() => {
     // Check authentication on client side
-    const auth = localStorage.getItem("adminAuth");
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+
+    const auth = getCookie("adminAuth");
     if (!auth && window.location.pathname !== "/admin/login") {
       router.push("/admin/login");
     }
   }, [router]);
 
   const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
+    // Remove auth cookie
+    document.cookie = "adminAuth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     router.push("/admin/login");
   };
 

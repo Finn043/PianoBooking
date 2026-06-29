@@ -23,8 +23,8 @@ export default function LoginPage() {
     try {
       // Demo: Simple hardcoded check
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Store auth in localStorage (demo only)
-        localStorage.setItem("adminAuth", "true");
+        // Store auth in cookie for middleware to read
+        document.cookie = "adminAuth=true; path=/; max-age=86400"; // 24 hours
         router.push("/admin/dashboard");
       } else {
         setError("Invalid credentials");
