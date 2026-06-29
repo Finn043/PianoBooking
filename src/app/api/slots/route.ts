@@ -31,22 +31,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform data to include booking info
-    const slots = data?.map(slot => {
-      const booking = slot.bookings?.[0];
-      return {
-        id: slot.id,
-        start: slot.start_time,
-        end: slot.end_time,
-        available: slot.is_available && !booking,
-        title: booking ? `Booked by ${booking.students?.name}` : 'Available',
-        status: booking?.status || 'available',
-        studentName: booking?.students?.name,
-        studentEmail: booking?.students?.email,
-        packageName: booking?.students?.packages?.name,
-        isRecurring: booking?.is_recurring || false,
-      };
-    }) || [];
+    // Return raw slot data for calendar page compatibility
+    const slots = data?.map(slot => ({
+      id: slot.id,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      is_available: slot.is_available,
+    })) || [];
 
     return NextResponse.json({ success: true, data: slots });
   } catch (error) {
