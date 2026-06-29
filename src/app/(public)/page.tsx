@@ -23,15 +23,9 @@ export default function HomePage() {
       if (result.success && result.data) {
         setSlots(result.data.map((s: any) => ({
           id: s.id,
-          start: new Date(s.start),
-          end: new Date(s.end),
-          available: s.available,
-          title: s.title,
-          status: s.status,
-          studentName: s.studentName,
-          studentEmail: s.studentEmail,
-          packageName: s.packageName,
-          isRecurring: s.isRecurring,
+          start: new Date(s.start_time),
+          end: new Date(s.end_time),
+          available: s.is_available,
         })));
       }
     } catch (error) {
