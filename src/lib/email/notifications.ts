@@ -1,5 +1,5 @@
 /**
- * Send booking confirmation email via Supabase
+ * Send booking confirmation email via Supabase Edge Function
  */
 export async function sendBookingConfirmationEmail(
   studentName: string,
@@ -7,12 +7,30 @@ export async function sendBookingConfirmationEmail(
   slotStartTime: string,
   slotEndTime: string
 ) {
-  // Use Supabase Edge Function to send email
-  // For now, log the data - can be replaced with actual email trigger
-  console.log('📧 Booking confirmation email sent:', {
-    to: studentEmail,
-    subject: 'Piano Lesson Booking Confirmed',
-    startTime: slotStartTime,
-    endTime: slotEndTime,
-  });
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-booking-email`;
+
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        studentName,
+        studentEmail,
+        startTime: slotStartTime,
+        endTime: slotEndTime,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Failed to send booking email:', error);
+      // Don't throw - booking should succeed even if email fails
+    }
+  } catch (error) {
+    console.error('Error sending booking email:', error);
+    // Don't throw - booking should succeed even if email fails
+  }
 }

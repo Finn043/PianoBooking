@@ -129,7 +129,7 @@ export async function GET(request: Request) {
     // Get admin's Google Calendar status
     const { data: admin, error } = await supabase
       .from('students')
-      .select('google_calendar_enabled, google_calendar_id')
+      .select('google_access_token, google_calendar_id')
       .eq('email', user.email)
       .single();
 
@@ -138,7 +138,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      connected: admin?.google_calendar_enabled || false,
+      connected: !!admin?.google_access_token,
       calendarId: admin?.google_calendar_id || null,
     });
   } catch (error) {
@@ -156,14 +156,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Remove Google Calendar tokens
+    // Remove Google Calendar tokens from students table
     const { error } = await supabase
       .from('students')
       .update({
         google_access_token: null,
         google_refresh_token: null,
         google_token_expires_at: null,
-        google_calendar_enabled: false,
+        google_calendar_id: null,
       })
       .eq('email', user.email);
 

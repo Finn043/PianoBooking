@@ -36,16 +36,17 @@ export async function GET(request: Request) {
     // Exchange authorization code for access token
     const tokens = await getAccessToken(code);
 
-    // Store tokens in user metadata or a separate table
+    // Store or update tokens in students table (matched by email)
     const { error: updateError } = await supabase
-      .from('users')
+      .from('students')
       .update({
         google_access_token: tokens.access_token,
         google_refresh_token: tokens.refresh_token,
         google_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
         google_calendar_enabled: true,
+        google_calendar_id: 'primary',
       })
-      .eq('id', user.id);
+      .eq('email', user.email);
 
     if (updateError) {
       console.error('Failed to store Google tokens:', updateError);

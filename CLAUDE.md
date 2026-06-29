@@ -5,9 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start dev server on port 3000/3001
-npm run build        # Production build
-npm run start        # Start production server
+npm run dev          # Start dev server on port 3000 (http://localhost:3000)
+npm run build        # Production build for Netlify deployment
+npm run start        # Start production server locally
 npm run lint         # Run ESLint
 ```
 
@@ -53,3 +53,69 @@ ADMIN_EMAIL=your_admin_email
 Run migrations in Supabase SQL Editor in order: `001_initial_schema.sql`, `002_rls_policies.sql`, `003_seed_data.sql`, `004_google_calendar_oauth.sql`, `005_fix_rls_policies.sql`.
 
 Key tables: `packages`, `students`, `slots`, `bookings`, `availability_patterns`. Timezone: `Australia/Sydney`. Slot duration: 60 minutes.
+
+## Deployment
+
+**Production URL:** https://hannah-piano-booking.netlify.app
+
+**Deploy to Netlify:**
+```bash
+npm run build
+# Deploy dist/ to Netlify (automatic via Git)
+```
+
+**Edge Functions:** Deploy via Supabase CLI (not part of Next.js build):
+```bash
+supabase functions deploy send-booking-email
+```
+
+## Common Issues & Solutions
+
+### ❌ "404 on /admin" Error
+**Cause:** Missing `src/app/admin/page.tsx` - Next.js needs a page at the route level.
+
+**Solution:** Create redirect page:
+```typescript
+// src/app/admin/page.tsx
+import { redirect } from 'next/navigation';
+
+export default function AdminPage() {
+  redirect('/admin/dashboard');
+}
+```
+
+### ❌ "Build failed: Cannot find module 'jsr:@supabase/server@^1'"
+**Cause:** Edge Function in wrong location - Next.js trying to compile Deno-specific code.
+
+**Solution:** Move Edge Functions to `.supabase/functions/` (outside Next.js source):
+```bash
+# Wrong: supabase/functions/send-booking-email/
+# Correct: .supabase/functions/send-booking-email/
+```
+
+### ❌ RLS Policies Blocking Service Role
+**Cause:** Missing policies for service role access on `students`, `bookings`, `slots`.
+
+**Solution:** Apply migration `005_fix_rls_policies.sql` or create policies:
+```sql
+-- Allow service role full access
+CREATE POLICY "Service role can do everything" ON students
+  FOR ALL USING (auth.role() = 'service_role');
+```
+
+### ❌ Google Calendar Sync Not Working
+**Cause:** OAuth tokens not stored or missing connection.
+
+**Solution:**
+1. Log in to admin dashboard
+2. Go to `/admin/settings`
+3. Click "Connect Google Calendar"
+4. Tokens stored in `students` table matched by email
+
+### ❌ Email Confirmations Not Sending
+**Cause:** Edge Function not deployed or RESEND_API_KEY missing.
+
+**Solution:**
+1. Deploy function: `supabase functions deploy send-booking-email`
+2. Set secret in Supabase Dashboard → Edge Functions → Secrets
+3. Name: `RESEND_API_KEY`, Value: Your API key
