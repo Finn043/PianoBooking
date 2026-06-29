@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { APP_CONFIG } from '@/lib/constants';
 import { createCalendarEvent, refreshAccessToken, formatBookingAsCalendarEvent } from '@/lib/google-calendar/client';
+import { sendBookingConfirmationEmail } from '@/lib/email/notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -142,6 +143,14 @@ export async function POST(request: NextRequest) {
       .update({ is_available: false })
       .eq('id', slotId);
 
+    // Send booking confirmation email
+    await sendBookingConfirmationEmail(
+      booking.students.name,
+      booking.students.email,
+      booking.slots.start_time,
+      booking.slots.end_time
+    );
+
     // Create Google Calendar event if auto-confirmed
     let googleEventId = null;
     if (autoConfirm) {
@@ -201,8 +210,8 @@ export async function POST(request: NextRequest) {
       data: {
         booking: { ...booking, google_calendar_event_id: googleEventId },
         message: autoConfirm
-          ? 'Booking confirmed! Check your email for confirmation.'
-          : 'Booking submitted! You will receive a confirmation email shortly.',
+          ? 'Booking confirmed! See you in class.'
+          : 'Booking submitted! See you in class.',
       },
     });
   } catch (error) {
