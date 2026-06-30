@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { PianoHeader } from "@/components/shared/PianoHeader";
 import { BookingCalendar } from "@/components/calendar/BookingCalendar";
 import { BookingForm } from "@/components/calendar/BookingForm";
-import { CalendarSlot } from "@/types";
+import type { CalendarSlot } from "@/types";
+import { mapSlotToCalendarSlot, type Slot as ApiSlot } from "@/types/api";
 
 export default function HomePage() {
   const [selectedSlot, setSelectedSlot] = useState<CalendarSlot | null>(null);
@@ -21,12 +22,8 @@ export default function HomePage() {
       const result = await response.json();
 
       if (result.success && result.data) {
-        setSlots(result.data.map((s: any) => ({
-          id: s.id,
-          start: new Date(s.start_time),
-          end: new Date(s.end_time),
-          available: s.is_available,
-        })));
+        // Use type-safe mapper function
+        setSlots(result.data.map((slot: ApiSlot) => mapSlotToCalendarSlot(slot)));
       }
     } catch (error) {
       console.error('Error fetching slots:', error);

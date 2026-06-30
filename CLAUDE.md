@@ -58,6 +58,29 @@ Key tables: `packages`, `students`, `slots`, `bookings`, `availability_patterns`
 
 **Production URL:** https://hannah-piano-booking.netlify.app
 
+## API Development Guidelines
+
+**CRITICAL:** Before making any API changes, read `API_SPECIFICATION.md`
+
+### API Contract Rules:
+1. **All API responses must use database field names** (snake_case): `start_time`, `end_time`, `is_available`
+2. **Use type-safe mappers** from `src/types/api.ts`: `mapSlotToCalendarSlot()`, `mapBookingWithRelations()`
+3. **Update API_SPECIFICATION.md first** before changing any API route
+4. **Test all consumers** after API changes - use `grep -r "fetch.*\/api\/"` to find them
+
+### Type-Safe Development:
+- Database types: `src/types/api.ts` (snake_case)
+- Frontend types: `src/types/index.ts` (camelCase for UI)
+- Helper functions: `mapSlotToCalendarSlot()`, `mapBookingWithRelations()`
+
+### When Adding New Database Fields:
+1. Add to `src/types/api.ts` (database type)
+2. Update `API_SPECIFICATION.md`
+3. Update relevant API routes
+4. Update all consumers using helper functions
+
+## Deployment
+
 **Deploy to Netlify:**
 ```bash
 npm run build

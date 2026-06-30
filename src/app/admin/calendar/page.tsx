@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { generateSlotsFromRange, formatSlotDate, formatSlotTime } from "@/lib/utils/slots";
-
-interface Slot {
-  id: string;
-  start_time: string;
-  end_time: string;
-  is_available: boolean;
-}
+import type { Slot } from "@/types/api";
 
 export default function AdminCalendarPage() {
   const [slots, setSlots] = useState<Slot[]>([]);
