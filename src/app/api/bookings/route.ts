@@ -159,19 +159,19 @@ export async function POST(request: NextRequest) {
       calendarUrl
     );
 
-    // Create Google Calendar events if auto-confirmed
+    // Create Google Calendar event on admin's calendar if auto-confirmed
+    // Admin is the host (organizer), student is attendee (guest)
+    // Google automatically sends a calendar invite to the student via sendUpdates: 'all'
     let adminGoogleEventId = null;
-    let studentGoogleEventId = null;
 
     if (autoConfirm) {
       try {
-        // 1. Create event in admin's calendar
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@pianoclass.com';
-
+        // Find admin by google_calendar_enabled flag (the user who connected Google Calendar)
         const { data: adminUser } = await supabaseAdmin
           .from('students')
-          .select('google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
-          .eq('email', adminEmail)
+          .select('email, google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
+          .eq('google_calendar_enabled', true)
+          .limit(1)
           .single();
 
         if (adminUser?.google_access_token) {
@@ -182,7 +182,6 @@ export async function POST(request: NextRequest) {
             const tokens = await refreshAccessToken(adminUser.google_refresh_token);
             accessToken = tokens.access_token;
 
-            // Update stored tokens
             await supabaseAdmin
               .from('students')
               .update({
@@ -190,10 +189,11 @@ export async function POST(request: NextRequest) {
                 google_refresh_token: tokens.refresh_token || adminUser.google_refresh_token,
                 google_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
               })
-              .eq('email', adminEmail);
+              .eq('email', adminUser.email);
           }
 
-          // Create calendar event in admin's calendar
+          // Create event: admin = host, student = attendee
+          // Google sends calendar invite to student automatically
           const eventData = formatBookingAsCalendarEvent(
             studentName,
             studentEmail,
@@ -202,57 +202,16 @@ export async function POST(request: NextRequest) {
           );
 
           adminGoogleEventId = await createCalendarEvent(accessToken, eventData);
-          console.log('✅ Admin calendar event created:', adminGoogleEventId);
-        }
+          console.log('Admin calendar event created:', adminGoogleEventId);
 
-        // 2. Create event in student's calendar (if they have Google Calendar connected)
-        const { data: studentUser } = await supabaseAdmin
-          .from('students')
-          .select('google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
-          .eq('email', studentEmail)
-          .single();
-
-        if (studentUser?.google_access_token) {
-          let accessToken = studentUser.google_access_token;
-
-          // Check if token needs refresh
-          if (studentUser.google_token_expires_at && new Date(studentUser.google_token_expires_at) < new Date()) {
-            const tokens = await refreshAccessToken(studentUser.google_refresh_token);
-            accessToken = tokens.access_token;
-
-            // Update stored tokens
-            await supabaseAdmin
-              .from('students')
-              .update({
-                google_access_token: tokens.access_token,
-                google_refresh_token: tokens.refresh_token || studentUser.google_refresh_token,
-                google_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-              })
-              .eq('email', studentEmail);
-          }
-
-          // Create calendar event in student's calendar
-          const studentEventData = formatBookingAsCalendarEvent(
-            studentName,
-            studentEmail,
-            slot.start_time,
-            slot.end_time
-          );
-
-          studentGoogleEventId = await createCalendarEvent(accessToken, studentEventData);
-          console.log('✅ Student calendar event created:', studentGoogleEventId);
+          // Store event ID on booking
+          await supabaseAdmin
+            .from('bookings')
+            .update({ google_calendar_event_id: adminGoogleEventId })
+            .eq('id', booking.id);
         } else {
-          console.log('ℹ️ Student does not have Google Calendar connected');
+          console.log('Admin has not connected Google Calendar');
         }
-
-        // Update booking with both event IDs
-        await supabaseAdmin
-          .from('bookings')
-          .update({
-            google_calendar_event_id: adminGoogleEventId,
-            student_calendar_event_id: studentGoogleEventId,
-          })
-          .eq('id', booking.id);
       } catch (calendarError) {
         console.error('Google Calendar sync error:', calendarError);
         // Don't fail booking if calendar sync fails
@@ -271,11 +230,10 @@ export async function POST(request: NextRequest) {
       data: {
         booking: { ...booking },
         message: autoConfirm
-          ? 'Booking confirmed! Calendar invitations sent.'
+          ? 'Booking confirmed!'
           : 'Booking submitted! See you in class.',
         calendarSync: {
           admin: !!adminGoogleEventId,
-          student: !!studentGoogleEventId,
         },
         addToCalendarUrl,
       },
