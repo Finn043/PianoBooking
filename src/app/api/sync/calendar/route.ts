@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createCalendarEvent, listCalendarEvents, deleteCalendarEvent, refreshAccessToken } from '@/lib/google-calendar/client';
 import { NextResponse } from 'next/server';
 import { formatBookingAsCalendarEvent } from '@/lib/google-calendar/client';
@@ -8,6 +9,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { action, slotId, bookingId, studentId } = body;
 
+    // Use server client only for auth check
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -15,8 +17,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get admin's Google Calendar tokens
-    const { data: admin, error: adminError } = await supabase
+    // Use supabaseAdmin (service role) to bypass RLS on students table
+    const { data: admin, error: adminError } = await supabaseAdmin
       .from('students')
       .select('google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
       .eq('email', user.email)
@@ -33,8 +35,7 @@ export async function POST(request: Request) {
       const tokens = await refreshAccessToken(admin.google_refresh_token);
       accessToken = tokens.access_token;
 
-      // Update stored tokens
-      await supabase
+      await supabaseAdmin
         .from('students')
         .update({
           google_access_token: tokens.access_token,
@@ -44,11 +45,9 @@ export async function POST(request: Request) {
         .eq('email', user.email);
     }
 
-    // Handle different sync actions
     switch (action) {
       case 'create_booking': {
-        // Create calendar event for booking
-        const { data: booking } = await supabase
+        const { data: booking } = await supabaseAdmin
           .from('bookings')
           .select(`
             *,
@@ -71,8 +70,7 @@ export async function POST(request: Request) {
 
         const eventId = await createCalendarEvent(accessToken, eventData);
 
-        // Update booking with event ID
-        await supabase
+        await supabaseAdmin
           .from('bookings')
           .update({ google_calendar_event_id: eventId })
           .eq('id', bookingId);
@@ -81,8 +79,7 @@ export async function POST(request: Request) {
       }
 
       case 'delete_booking': {
-        // Delete calendar event
-        const { data: booking } = await supabase
+        const { data: booking } = await supabaseAdmin
           .from('bookings')
           .select('google_calendar_event_id')
           .eq('id', bookingId)
@@ -98,13 +95,10 @@ export async function POST(request: Request) {
       }
 
       case 'sync_slots': {
-        // Sync slots from Google Calendar
         const { start, end } = body;
 
         const events = await listCalendarEvents(accessToken, start, end);
 
-        // Process events and update slots
-        // This would need more complex logic to match events to slots
         return NextResponse.json({ success: true, events: events.length });
       }
 
@@ -119,6 +113,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    // Use server client for auth check only
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -126,8 +121,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ connected: false });
     }
 
-    // Get admin's Google Calendar status
-    const { data: admin, error } = await supabase
+    // Use supabaseAdmin to bypass RLS
+    const { data: admin, error } = await supabaseAdmin
       .from('students')
       .select('google_access_token, google_calendar_id')
       .eq('email', user.email)
@@ -156,14 +151,15 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Remove Google Calendar tokens from students table
-    const { error } = await supabase
+    // Use supabaseAdmin to bypass RLS
+    const { error } = await supabaseAdmin
       .from('students')
       .update({
         google_access_token: null,
         google_refresh_token: null,
         google_token_expires_at: null,
         google_calendar_id: null,
+        google_calendar_enabled: false,
       })
       .eq('email', user.email);
 

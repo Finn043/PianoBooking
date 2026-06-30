@@ -5,7 +5,8 @@ export async function sendBookingConfirmationEmail(
   studentName: string,
   studentEmail: string,
   slotStartTime: string,
-  slotEndTime: string
+  slotEndTime: string,
+  addToCalendarUrl?: string
 ) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -21,6 +22,7 @@ export async function sendBookingConfirmationEmail(
         studentEmail,
         startTime: slotStartTime,
         endTime: slotEndTime,
+        addToCalendarUrl,
       }),
     });
 

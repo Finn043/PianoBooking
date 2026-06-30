@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { APP_CONFIG } from '@/lib/constants';
-import { createCalendarEvent, refreshAccessToken, formatBookingAsCalendarEvent } from '@/lib/google-calendar/client';
+import { createCalendarEvent, refreshAccessToken, formatBookingAsCalendarEvent, generateAddToCalendarUrl } from '@/lib/google-calendar/client';
 import { sendBookingConfirmationEmail } from '@/lib/email/notifications';
 
 export async function GET(request: NextRequest) {
@@ -143,12 +143,20 @@ export async function POST(request: NextRequest) {
       .update({ is_available: false })
       .eq('id', slotId);
 
-    // Send booking confirmation email
+    // Generate calendar URL for email
+    const calendarUrl = generateAddToCalendarUrl(
+      studentName,
+      slot.start_time,
+      slot.end_time
+    );
+
+    // Send booking confirmation email with calendar link
     await sendBookingConfirmationEmail(
       booking.students.name,
       booking.students.email,
       booking.slots.start_time,
-      booking.slots.end_time
+      booking.slots.end_time,
+      calendarUrl
     );
 
     // Create Google Calendar events if auto-confirmed
@@ -251,6 +259,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate "Add to Google Calendar" URL for student
+    const addToCalendarUrl = generateAddToCalendarUrl(
+      studentName,
+      slot.start_time,
+      slot.end_time
+    );
+
     return NextResponse.json({
       success: true,
       data: {
@@ -262,6 +277,7 @@ export async function POST(request: NextRequest) {
           admin: !!adminGoogleEventId,
           student: !!studentGoogleEventId,
         },
+        addToCalendarUrl,
       },
     });
   } catch (error) {

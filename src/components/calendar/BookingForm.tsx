@@ -20,6 +20,7 @@ export function BookingForm({ slot, userTimezone, onClose }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [addToCalendarUrl, setAddToCalendarUrl] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,13 +46,11 @@ export function BookingForm({ slot, userTimezone, onClose }: BookingFormProps) {
         throw new Error(result.error?.message || 'Booking failed');
       }
 
-      // Show success state
+      // Show success state with calendar link
       setSuccess(true);
-
-      // Auto-close after 2 seconds
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      if (result.data?.addToCalendarUrl) {
+        setAddToCalendarUrl(result.data.addToCalendarUrl);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Booking failed');
     } finally {
@@ -75,11 +74,29 @@ export function BookingForm({ slot, userTimezone, onClose }: BookingFormProps) {
             Booking Confirmed!
           </h3>
           <p className="text-ink-700 mb-4">
-            Check your email for confirmation and calendar invite.
+            A confirmation email has been sent to your inbox.
           </p>
-          <p className="text-sm text-ink-500">
-            Closing automatically...
-          </p>
+
+          {addToCalendarUrl && (
+            <a
+              href={addToCalendarUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-piano-accent text-piano-white rounded-lg hover:bg-piano-highlight transition-colors font-medium mb-4"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
+              </svg>
+              Add to Google Calendar
+            </a>
+          )}
+
+          <button
+            onClick={onClose}
+            className="block w-full text-sm text-ink-500 hover:text-ink-700 transition-colors mt-2"
+          >
+            Close
+          </button>
         </div>
       </div>
     );

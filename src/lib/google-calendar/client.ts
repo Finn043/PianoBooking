@@ -193,6 +193,29 @@ export async function listCalendarEvents(
 }
 
 /**
+ * Generate a Google Calendar "Add to Calendar" URL (no OAuth required)
+ * Students can click this link to add the event to their own Google Calendar
+ */
+export function generateAddToCalendarUrl(
+  studentName: string,
+  startTime: string,
+  endTime: string
+): string {
+  const formatForGCal = (isoDate: string) =>
+    new Date(isoDate).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Piano Lesson - Hannah's Piano Class`,
+    dates: `${formatForGCal(startTime)}/${formatForGCal(endTime)}`,
+    details: `Piano lesson for ${studentName}\n\nBooked via Hannah's Piano Class`,
+    ctz: 'Australia/Sydney',
+  });
+
+  return `https://calendar.google.com/calendar/render?${params}`;
+}
+
+/**
  * Delete calendar event
  */
 export async function deleteCalendarEvent(
