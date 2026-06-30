@@ -1,35 +1,61 @@
+import { supabaseAdmin } from '@/lib/supabase/admin';
+
 async function getDashboardStats() {
-  // Mock data for now - replace with real API calls later
+  const now = new Date().toISOString();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  // Fetch all in parallel
+  const [todayBookingsRes, activeStudentsRes, lowSessionRes, upcomingRes] = await Promise.all([
+    // Today's bookings count
+    supabaseAdmin
+      .from('bookings')
+      .select('id, slots!inner(start_time)', { count: 'exact', head: true })
+      .neq('status', 'cancelled')
+      .gte('slots.start_time', todayStart.toISOString())
+      .lte('slots.start_time', todayEnd.toISOString()),
+
+    // Active students (have remaining sessions > 0 or have upcoming bookings)
+    supabaseAdmin
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .eq('google_calendar_enabled', false)
+      .gt('total_purchased', 0),
+
+    // Low session students (remaining_sessions <= 2 and purchased at least once)
+    supabaseAdmin
+      .from('students')
+      .select('id, name, email, remaining_sessions, packages(name)')
+      .lte('remaining_sessions', 2)
+      .gt('total_purchased', 0)
+      .order('remaining_sessions', { ascending: true }),
+
+    // Upcoming bookings (from now onward)
+    supabaseAdmin
+      .from('bookings')
+      .select('id, status, slots!inner(start_time, end_time), students(name, email)')
+      .neq('status', 'cancelled')
+      .gte('slots.start_time', now)
+      .order('slots(start_time)', { ascending: true })
+      .limit(10),
+  ]);
+
+  const lowSessionStudents = (lowSessionRes.data || []).map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    email: s.email,
+    remaining_sessions: s.remaining_sessions,
+    package_name: s.packages?.name || 'No package',
+  }));
+
   return {
-    todayBookings: 3,
-    activeStudents: 12,
-    lowSessionAlerts: 4,
-    lowSessionStudents: [
-      { id: '1', name: 'John Doe', email: 'john@example.com', remaining_sessions: 1, package_name: 'Bundle 5 Sessions' },
-      { id: '2', name: 'Sarah Lee', email: 'sarah@example.com', remaining_sessions: 0, package_name: 'Bundle 10 Sessions' },
-      { id: '3', name: 'Mike Johnson', email: 'mike@example.com', remaining_sessions: 2, package_name: '4-Week Package (2 sessions/week)' },
-      { id: '4', name: 'Emily Chen', email: 'emily@example.com', remaining_sessions: 1, package_name: '1 Session' },
-    ],
-    upcomingBookings: [
-      {
-        id: '1',
-        slots: { start_time: '2025-06-23T15:00:00Z', end_time: '2025-06-23T15:45:00Z' },
-        students: { name: 'John Doe', email: 'john@example.com' },
-        status: 'confirmed',
-      },
-      {
-        id: '2',
-        slots: { start_time: '2025-06-23T15:45:00Z', end_time: '2025-06-23T16:30:00Z' },
-        students: { name: 'Jane Smith', email: 'jane@example.com' },
-        status: 'pending',
-      },
-      {
-        id: '3',
-        slots: { start_time: '2025-06-24T15:00:00Z', end_time: '2025-06-24T15:45:00Z' },
-        students: { name: 'Bob Wilson', email: 'bob@example.com' },
-        status: 'confirmed',
-      },
-    ],
+    todayBookings: todayBookingsRes.count || 0,
+    activeStudents: activeStudentsRes.count || 0,
+    lowSessionAlerts: lowSessionStudents.length,
+    lowSessionStudents,
+    upcomingBookings: upcomingRes.data || [],
   };
 }
 
