@@ -1,6 +1,4 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 interface Student {
   id: string;
@@ -12,68 +10,28 @@ interface Student {
   notes?: string;
 }
 
-export default function StudentsPage() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+async function fetchStudents(): Promise<Student[]> {
+  const { data, error } = await supabaseAdmin
+    .from('students')
+    .select('id, name, email, remaining_sessions, total_purchased, notes, packages(name)')
+    .eq('google_calendar_enabled', false)
+    .order('name', { ascending: true });
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+  if (error || !data) return [];
 
-  const fetchStudents = async () => {
-    try {
-      // Mock data for now
-      const mockStudents: Student[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          package_name: 'Bundle 5 Sessions',
-          remaining_sessions: 3,
-          total_purchased: 5,
-          notes: 'Enjoys classical music',
-        },
-        {
-          id: '2',
-          name: 'Sarah Lee',
-          email: 'sarah@example.com',
-          package_name: 'Bundle 10 Sessions',
-          remaining_sessions: 8,
-          total_purchased: 10,
-        },
-        {
-          id: '3',
-          name: 'Mike Johnson',
-          email: 'mike@example.com',
-          package_name: '4-Week Package (2 sessions/week)',
-          remaining_sessions: 6,
-          total_purchased: 8,
-          notes: 'Preparing for recital',
-        },
-        {
-          id: '4',
-          name: 'Emily Chen',
-          email: 'emily@example.com',
-          package_name: '1 Session',
-          remaining_sessions: 0,
-          total_purchased: 1,
-        },
-      ];
-      setStudents(mockStudents);
-    } catch (error) {
-      console.error('Failed to fetch students:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  return data.map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    email: s.email,
+    remaining_sessions: s.remaining_sessions,
+    total_purchased: s.total_purchased,
+    notes: s.notes,
+    package_name: s.packages?.name,
+  }));
+}
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin w-8 h-8 border-4 border-piano-accent border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+export default async function StudentsPage() {
+  const students = await fetchStudents();
 
   return (
     <div>

@@ -98,6 +98,7 @@ export function formatBookingAsCalendarEvent(
 ): {
   summary: string;
   description: string;
+  location: string;
   start: {
     dateTime: string;
     timeZone: string;
@@ -113,7 +114,10 @@ export function formatBookingAsCalendarEvent(
     description: `Package: ${packageName || 'Single Session'}
 Student: ${studentName} (${studentEmail})
 
+Bấm intercom 1702 và đi thang máy lên lầu 17
+
 Booked via Hannah's Piano Class`,
+    location: 'https://share.google/j4vPx5cCYsHsUgVqk',
     start: {
       dateTime: startTime,
       timeZone: 'Australia/Sydney',
@@ -208,7 +212,8 @@ export function generateAddToCalendarUrl(
     action: 'TEMPLATE',
     text: `Piano Lesson - Hannah's Piano Class`,
     dates: `${formatForGCal(startTime)}/${formatForGCal(endTime)}`,
-    details: `Piano lesson for ${studentName}\n\nBooked via Hannah's Piano Class`,
+    details: `Piano lesson for ${studentName}\n\nBấm intercom 1702 và đi thang máy lên lầu 17\n\nBooked via Hannah's Piano Class`,
+    location: 'https://share.google/j4vPx5cCYsHsUgVqk',
     ctz: 'Australia/Sydney',
   });
 

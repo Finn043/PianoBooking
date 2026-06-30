@@ -17,12 +17,11 @@ async function getDashboardStats() {
       .gte('slots.start_time', todayStart.toISOString())
       .lte('slots.start_time', todayEnd.toISOString()),
 
-    // Active students (have remaining sessions > 0 or have upcoming bookings)
+    // Active students (exclude admin row which has google_calendar_enabled)
     supabaseAdmin
       .from('students')
       .select('id', { count: 'exact', head: true })
-      .eq('google_calendar_enabled', false)
-      .gt('total_purchased', 0),
+      .eq('google_calendar_enabled', false),
 
     // Low session students (remaining_sessions <= 2 and purchased at least once)
     supabaseAdmin
