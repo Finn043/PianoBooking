@@ -53,18 +53,22 @@ export default function HomePage() {
   return (
     <main className="relative min-h-screen">
       {/* Video Background */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-50"
           style={{ minHeight: '100vh' }}
+          onError={(e) => {
+            // Fallback to gradient if video fails to load
+            e.currentTarget.style.display = 'none';
+          }}
         >
           <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-pianist-playing-the-piano-41865-large.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
       </div>
 
       {/* Navbar */}
