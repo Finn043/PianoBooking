@@ -159,7 +159,9 @@ export default function SettingsPage() {
             </div>
             {googleConnected && (
               <div className="text-sm text-ink-600">
-                ✓ Bookings will automatically sync to your Google Calendar
+                ✓ Your calendar will receive all booking events
+                <br />
+                <span className="text-xs">Students can also connect their calendars to receive invites</span>
               </div>
             )}
           </div>

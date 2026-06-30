@@ -151,11 +151,13 @@ export async function POST(request: NextRequest) {
       booking.slots.end_time
     );
 
-    // Create Google Calendar event if auto-confirmed
-    let googleEventId = null;
+    // Create Google Calendar events if auto-confirmed
+    let adminGoogleEventId = null;
+    let studentGoogleEventId = null;
+
     if (autoConfirm) {
       try {
-        // Get admin's Google Calendar tokens (using admin email from env or first admin user)
+        // 1. Create event in admin's calendar
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@pianoclass.com';
 
         const { data: adminUser } = await supabaseAdmin
@@ -183,7 +185,7 @@ export async function POST(request: NextRequest) {
               .eq('email', adminEmail);
           }
 
-          // Create calendar event
+          // Create calendar event in admin's calendar
           const eventData = formatBookingAsCalendarEvent(
             studentName,
             studentEmail,
@@ -191,14 +193,58 @@ export async function POST(request: NextRequest) {
             slot.end_time
           );
 
-          googleEventId = await createCalendarEvent(accessToken, eventData);
-
-          // Update booking with event ID
-          await supabaseAdmin
-            .from('bookings')
-            .update({ google_calendar_event_id: googleEventId })
-            .eq('id', booking.id);
+          adminGoogleEventId = await createCalendarEvent(accessToken, eventData);
+          console.log('✅ Admin calendar event created:', adminGoogleEventId);
         }
+
+        // 2. Create event in student's calendar (if they have Google Calendar connected)
+        const { data: studentUser } = await supabaseAdmin
+          .from('students')
+          .select('google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
+          .eq('email', studentEmail)
+          .single();
+
+        if (studentUser?.google_access_token) {
+          let accessToken = studentUser.google_access_token;
+
+          // Check if token needs refresh
+          if (studentUser.google_token_expires_at && new Date(studentUser.google_token_expires_at) < new Date()) {
+            const tokens = await refreshAccessToken(studentUser.google_refresh_token);
+            accessToken = tokens.access_token;
+
+            // Update stored tokens
+            await supabaseAdmin
+              .from('students')
+              .update({
+                google_access_token: tokens.access_token,
+                google_refresh_token: tokens.refresh_token || studentUser.google_refresh_token,
+                google_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+              })
+              .eq('email', studentEmail);
+          }
+
+          // Create calendar event in student's calendar
+          const studentEventData = formatBookingAsCalendarEvent(
+            studentName,
+            studentEmail,
+            slot.start_time,
+            slot.end_time
+          );
+
+          studentGoogleEventId = await createCalendarEvent(accessToken, studentEventData);
+          console.log('✅ Student calendar event created:', studentGoogleEventId);
+        } else {
+          console.log('ℹ️ Student does not have Google Calendar connected');
+        }
+
+        // Update booking with both event IDs
+        await supabaseAdmin
+          .from('bookings')
+          .update({
+            google_calendar_event_id: adminGoogleEventId,
+            student_calendar_event_id: studentGoogleEventId,
+          })
+          .eq('id', booking.id);
       } catch (calendarError) {
         console.error('Google Calendar sync error:', calendarError);
         // Don't fail booking if calendar sync fails
@@ -208,10 +254,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        booking: { ...booking, google_calendar_event_id: googleEventId },
+        booking: { ...booking },
         message: autoConfirm
-          ? 'Booking confirmed! See you in class.'
+          ? 'Booking confirmed! Calendar invitations sent.'
           : 'Booking submitted! See you in class.',
+        calendarSync: {
+          admin: !!adminGoogleEventId,
+          student: !!studentGoogleEventId,
+        },
       },
     });
   } catch (error) {

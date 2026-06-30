@@ -206,7 +206,8 @@
 - `recurring_pattern` (JSONB)
 - `session_number` (INTEGER)
 - `notes` (TEXT)
-- `google_calendar_event_id` (VARCHAR)
+- `google_calendar_event_id` (VARCHAR) - Admin's calendar event
+- `student_calendar_event_id` (VARCHAR) - Student's calendar event
 - `created_at` (TIMESTAMPTZ)
 - `updated_at` (TIMESTAMPTZ)
 
