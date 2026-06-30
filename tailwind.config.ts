@@ -12,10 +12,27 @@ const config: Config = {
     extend: {
       colors: {
         piano: {
-          black: '#1a1a1a',
-          white: '#f8f6f3',
-          accent: '#7C3AED',
+          black: '#121212',
+          white: '#FDFDF9',
+          accent: '#B45309',
           highlight: '#D97706',
+        },
+        stone: {
+          50: '#F5F5F0',
+          100: '#E5E5E5',
+          200: '#D4D4D4',
+          300: '#A3A3A3',
+          400: '#A0A0A0',
+          500: '#737373',
+          600: '#525252',
+          700: '#44403C',
+          800: '#1C1917',
+          900: '#0C0A09',
+          950: '#080706',
+        },
+        ivory: {
+          100: '#FDFDF9',
+          200: '#F8F8F7',
         },
         ink: {
           900: '#2a2a2a',

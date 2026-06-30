@@ -52,23 +52,15 @@ export default function HomePage() {
 
   return (
     <main className="relative min-h-screen">
-      {/* Video Background */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover opacity-50"
+      {/* Image Background */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-stone-950 via-stone-900 to-piano-black">
+        <img
+          src="/images/piano-hands.webp"
+          alt=""
+          className="w-full h-full object-cover opacity-40"
           style={{ minHeight: '100vh' }}
-          onError={(e) => {
-            // Fallback to gradient if video fails to load
-            e.currentTarget.style.display = 'none';
-          }}
-        >
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-pianist-playing-the-piano-41865-large.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70"></div>
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-stone-950/70 via-stone-900/50 to-piano-black/80"></div>
       </div>
 
       {/* Navbar */}
@@ -77,15 +69,25 @@ export default function HomePage() {
           {/* Logo */}
           <div className="flex items-center gap-3">
             <svg
-              className="w-8 h-8 text-piano-accent"
+              className="w-8 h-8"
               viewBox="0 0 24 24"
-              fill="currentColor"
             >
-              <rect x="2" y="4" width="20" height="16" rx="2" fill="#FDFDF7"/>
-              <rect x="4" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="7" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="13" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="16" y="4" width="2" height="12" fill="#1a1a1a"/>
+              {/* Piano frame */}
+              <rect x="2" y="4" width="20" height="16" rx="2" fill="#5c4033"/>
+              {/* White keys (ivory) */}
+              <rect x="3" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="5.5" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="8" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="10.5" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="13" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="15.5" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              <rect x="18" y="6" width="2.5" height="12" rx="0.5" fill="#FDFDF9"/>
+              {/* Black keys (ebony) */}
+              <rect x="4.5" y="6" width="1.5" height="7" rx="0.3" fill="#121212"/>
+              <rect x="7.5" y="6" width="1.5" height="7" rx="0.3" fill="#121212"/>
+              <rect x="12" y="6" width="1.5" height="7" rx="0.3" fill="#121212"/>
+              <rect x="14.5" y="6" width="1.5" height="7" rx="0.3" fill="#121212"/>
+              <rect x="17" y="6" width="1.5" height="7" rx="0.3" fill="#121212"/>
             </svg>
             <span className="font-heading font-bold text-white">PianoBooking</span>
           </div>
@@ -96,12 +98,12 @@ export default function HomePage() {
               <a
                 key={item}
                 href="#"
-                className="font-heading font-medium text-white text-white/80 hover:text-purple-300 transition-colors"
+                className="font-heading font-medium text-white/80 hover:text-piano-highlight transition-colors"
               >
                 {item}
               </a>
             ))}
-            <button className="bg-piano-accent text-white px-4 py-2 rounded-lg font-button font-semibold text-sm hover:opacity-90 transition-opacity">
+            <button className="group bg-piano-accent text-piano-white px-4 py-2 rounded-lg font-button font-semibold text-sm hover:bg-piano-highlight active:translate-y-0.5 transition-all shadow-md shadow-piano-accent/30">
               Book in 2 Mins
             </button>
           </div>
@@ -124,7 +126,7 @@ export default function HomePage() {
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 bg-black/95 flex items-center justify-center md:hidden">
+        <div className="fixed inset-0 z-30 bg-piano-black/95 backdrop-blur-sm flex items-center justify-center md:hidden">
           <div className="flex flex-col items-center gap-6">
             {['Lessons', 'How it Works', 'Rates', 'For Admins'].map((item) => (
               <a
@@ -141,7 +143,7 @@ export default function HomePage() {
                 setMobileMenuOpen(false);
                 scrollToCalendar();
               }}
-              className="bg-piano-accent text-white px-6 py-3 rounded-lg font-button font-semibold"
+              className="bg-piano-accent text-piano-white px-6 py-3 rounded-lg font-button font-semibold hover:bg-piano-highlight active:translate-y-0.5 transition-all shadow-lg shadow-piano-accent/40"
             >
               Book in 2 Mins
             </button>
@@ -153,11 +155,11 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen mt-24 md:mt-32 px-6">
         <div className="text-center max-w-4xl">
           {/* Tagline Pill */}
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1 mb-8">
-            <span className="bg-green-500 text-white rounded-full px-2 py-0.5 text-[11px] uppercase font-bold">
+          <div className="inline-flex items-center gap-2 bg-stone-800/60 backdrop-blur-md border border-piano-accent/30 rounded-full px-4 py-1 mb-8">
+            <span className="bg-piano-accent text-piano-white rounded-full px-2 py-0.5 text-[11px] uppercase font-bold">
               No Account Needed
             </span>
-            <span className="font-button font-medium text-white">⚡ Ready to play? Book your slot instantly</span>
+            <span className="font-button font-medium text-piano-white">⚡ Ready to play? Book your slot instantly</span>
           </div>
 
           {/* Headline */}
@@ -176,11 +178,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <button
               onClick={scrollToCalendar}
-              className="bg-piano-accent text-white px-8 py-4 rounded-xl font-button font-bold text-lg hover:scale-105 active:scale-95 transition-transform shadow-lg shadow-purple-500/50"
+              className="group relative bg-piano-accent text-piano-white px-8 py-4 rounded-lg font-button font-bold text-lg shadow-lg shadow-piano-accent/40 transition-all duration-150 hover:bg-piano-highlight hover:shadow-xl hover:shadow-piano-highlight/50 active:translate-y-1 active:shadow-md"
             >
-              View Available Slots 🎹
+              <span className="relative z-10">View Available Slots 🎹</span>
+              {/* Piano key press effect */}
+              <div className="absolute inset-0 bg-gradient-to-b from-white/0 to-white/10 rounded-lg opacity-0 group-active:opacity-100 transition-opacity"></div>
             </button>
-            <button className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl font-button font-medium hover:bg-white/10 transition-colors">
+            <button className="bg-stone-800/60 backdrop-blur border border-stone-600/40 text-piano-white px-8 py-4 rounded-lg font-button font-medium hover:bg-stone-700/60 hover:border-piano-accent/40 transition-all">
               Meet Teacher Hannah
             </button>
           </div>
@@ -213,7 +217,7 @@ export default function HomePage() {
       </div>
 
       {/* Booking Section */}
-      <div id="booking-section" className="relative z-10 bg-surface-100 py-16">
+      <div id="booking-section" className="relative z-10 bg-ivory-100 py-16">
         <div className="max-w-6xl mx-auto px-4 md:px-6">
           {/* Section heading */}
           <div className="mb-8 text-center">
@@ -226,7 +230,7 @@ export default function HomePage() {
           </div>
 
           {/* Calendar */}
-          <div className="bg-piano-white rounded-lg border border-muted shadow-md p-4 md:p-6">
+          <div className="bg-ivory-100 rounded-lg border border-stone-300 shadow-md p-4 md:p-6">
             <BookingCalendar
               initialSlots={slots}
               onSlotSelect={handleSlotSelect}
@@ -245,7 +249,7 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="relative z-10 bg-piano-black text-piano-white py-8">
+      <footer className="relative z-10 bg-stone-950 text-piano-white py-8">
         <div className="max-w-6xl mx-auto px-4 md:px-6 text-center">
           <p className="text-sm text-piano-white/75">
             &copy; 2025 Hannah&apos;s Piano Class. All rights reserved.
