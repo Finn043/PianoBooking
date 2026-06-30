@@ -14,8 +14,8 @@ const config: Config = {
         piano: {
           black: '#1a1a1a',
           white: '#f8f6f3',
-          accent: '#8b7355',
-          highlight: '#c9a66b',
+          accent: '#7C3AED',
+          highlight: '#D97706',
         },
         ink: {
           900: '#2a2a2a',
@@ -35,8 +35,10 @@ const config: Config = {
         info: '#6b8cc9',
       },
       fontFamily: {
-        display: ['Playfair Display', 'Georgia', 'serif'],
+        display: ['Instrument Serif', 'Georgia', 'serif'],
+        heading: ['Manrope', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
+        button: ['Cabin', 'sans-serif'],
         mono: ['Space Mono', 'monospace'],
       },
       spacing: {
