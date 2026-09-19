@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  slotDuration: 60, // minutes (1 hour)
+  slotDuration: 45, // minutes
   defaultTimeZone: 'Australia/Sydney',
   googleCalendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
   adminEmail: process.env.ADMIN_EMAIL || '',

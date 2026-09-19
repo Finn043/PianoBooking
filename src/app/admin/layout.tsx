@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { createClient } from '@/lib/supabase/client';
 import "../../styles/globals.css";
 
@@ -11,6 +12,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
@@ -45,64 +47,22 @@ export default function AdminLayout({
     router.push("/admin/login");
   };
 
+  const links = [['Overview', '/admin/dashboard'], ['Calendar', '/admin/calendar'], ['Students', '/admin/students'], ['Packages', '/admin/packages'], ['Settings', '/admin/settings']];
+
+  if (pathname === '/admin/login') return <>{children}</>;
+
   return (
-    <html lang="en">
-      <body className="bg-surface-100">
+      <div className="min-h-screen bg-[#f3f5f2] text-[#172523]">
         {/* Admin Header */}
-        <header className="bg-piano-black text-piano-white shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+        <header className="border-b border-white/10 bg-[#0d2926] text-white">
+          <div className="mx-auto max-w-[90rem] px-5 py-5 md:px-8">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <svg
-                  className="w-8 h-8 text-piano-accent"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <rect x="2" y="4" width="20" height="16" rx="1" fill="#f8f6f3"/>
-                  <rect x="4" y="4" width="2" height="12" fill="#1a1a1a"/>
-                  <rect x="7" y="4" width="2" height="12" fill="#1a1a1a"/>
-                  <rect x="13" y="4" width="2" height="12" fill="#1a1a1a"/>
-                  <rect x="16" y="4" width="2" height="12" fill="#1a1a1a"/>
-                </svg>
-                <h1 className="text-xl font-display font-semibold">
-                  Hannah&apos;s Piano Class
-                </h1>
-                <span className="text-piano-white/60 text-sm">Admin</span>
+                <span className="grid h-9 w-9 place-items-center border border-white/30">♩</span>
+                <div><h1 className="font-heading text-base font-semibold md:text-lg">Hannah Piano Studio</h1><span className="text-sm text-white/65">Studio admin</span></div>
               </div>
 
-              <nav className="hidden md:flex items-center gap-6">
-                <a
-                  href="/admin/dashboard"
-                  className="text-sm hover:text-piano-accent transition-colors"
-                >
-                  Dashboard
-                </a>
-                <a
-                  href="/admin/calendar"
-                  className="text-sm hover:text-piano-accent transition-colors"
-                >
-                  Calendar
-                </a>
-                <a
-                  href="/admin/students"
-                  className="text-sm hover:text-piano-accent transition-colors"
-                >
-                  Students
-                </a>
-                <a
-                  href="/admin/packages"
-                  className="text-sm hover:text-piano-accent transition-colors"
-                >
-                  Packages
-                </a>
-                <a
-                  href="/admin/settings"
-                  className="text-sm hover:text-piano-accent transition-colors"
-                >
-                  Settings
-                </a>
-              </nav>
+              <nav className="hidden items-center gap-1 md:flex">{links.map(([label, href]) => <a key={href} href={href} className={`px-3 py-2 text-base transition ${pathname === href ? 'bg-white/12 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}>{label}</a>)}</nav>
 
               <div className="flex items-center gap-4">
                 <span className="text-sm text-piano-white/80 hidden sm:block">
@@ -110,7 +70,7 @@ export default function AdminLayout({
                 </span>
                 <button
                   onClick={handleLogout}
-                  className="text-sm text-piano-white/80 hover:text-piano-white transition-colors"
+                  className="border border-white/20 px-3 py-2 text-sm text-white/75 hover:border-white/50 hover:text-white"
                 >
                   Logout
                 </button>
@@ -118,46 +78,14 @@ export default function AdminLayout({
             </div>
 
             {/* Mobile Navigation */}
-            <nav className="md:hidden flex gap-4 mt-4 pb-2 text-sm">
-              <a
-                href="/admin/dashboard"
-                className="text-piano-white/80 hover:text-piano-accent transition-colors"
-              >
-                Dashboard
-              </a>
-              <a
-                href="/admin/calendar"
-                className="text-piano-white/80 hover:text-piano-accent transition-colors"
-              >
-                Calendar
-              </a>
-              <a
-                href="/admin/students"
-                className="text-piano-white/80 hover:text-piano-accent transition-colors"
-              >
-                Students
-              </a>
-              <a
-                href="/admin/packages"
-                className="text-piano-white/80 hover:text-piano-accent transition-colors"
-              >
-                Packages
-              </a>
-              <a
-                href="/admin/settings"
-                className="text-piano-white/80 hover:text-piano-accent transition-colors"
-              >
-                Settings
-              </a>
-            </nav>
+            <nav className="mt-4 flex gap-1 overflow-x-auto pb-1 text-base md:hidden">{links.map(([label, href]) => <a key={href} href={href} className={`whitespace-nowrap px-3 py-2 ${pathname === href ? 'bg-white/12 text-white' : 'text-white/70'}`}>{label}</a>)}</nav>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <main className="mx-auto max-w-[90rem] px-5 py-8 md:px-8 md:py-12">
           {children}
         </main>
-      </body>
-    </html>
+      </div>
   );
 }

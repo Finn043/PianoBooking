@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,9 +12,15 @@
 
 
   body {
-    @apply bg-surface-100 text-ink-900 font-body;
+    @apply bg-[#f3f5f2] text-[#172523] font-body;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+
+  html { scroll-behavior: smooth; }
+
+  a, button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+  :focus-visible { outline: 2px solid #2d665f; outline-offset: 3px; }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
@@ -28,6 +32,20 @@
     text-wrap: balance;
   }
 }
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  background: white;
+  color: #173c38;
+  padding: .75rem 1rem;
+  font-weight: 600;
+}
+
+.skip-link:focus { transform: translateY(0); }
 
 @layer utilities {
   .text-balance {
@@ -75,6 +93,13 @@
   animation: slideUp 0.3s ease-out;
 }
 
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise { animation: rise .7s cubic-bezier(.16,1,.3,1) both; }
+
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out;
 }
@@ -87,16 +112,4 @@
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Piano keyboard pattern decoration */
-.piano-keys {
-  background: repeating-linear-gradient(
-    to right,
-    #f8f6f3 0px,
-    #f8f6f3 20px,
-    #1a1a1a 20px,
-    #1a1a1a 24px
-  );
-  opacity: 0.05;
 }

@@ -23,8 +23,8 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hannah's Piano Class - Book Your Lesson",
-  description: "Book your piano lesson online with Hannah's Piano Class. Online & Offline lessons available for all skill levels.",
+  title: "Hannah Piano Studio | Piano lessons in Sydney",
+  description: "Warm, one-to-one piano lessons in Sydney for beginners and growing musicians. View available times and book online.",
 };
 
 export default function RootLayout({

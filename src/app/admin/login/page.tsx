@@ -68,28 +68,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-100 flex items-center justify-center p-4">
-      <div className="bg-piano-white rounded-lg shadow-lg p-8 max-w-md w-full">
+    <div className="grid min-h-screen bg-[#0d2926] lg:grid-cols-[1.1fr_.9fr]">
+      <div className="relative hidden lg:block">
+        <img src="/images/piano2.jpeg" alt="Teacher and student at an upright piano" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-[#0d2926]/20" />
+        <a href="/" className="absolute left-10 top-9 text-sm font-semibold text-white">← Back to studio</a>
+        <p className="absolute bottom-10 left-10 max-w-md font-display text-4xl leading-tight text-white">A clear view of every lesson, student and week ahead.</p>
+      </div>
+      <div className="flex items-center justify-center px-5 py-16 md:px-12">
+      <div className="w-full max-w-md bg-[#f7f8f5] p-7 md:p-10">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <svg
-              className="w-12 h-12 text-piano-accent"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <rect x="2" y="4" width="20" height="16" rx="1" fill="#f8f6f3"/>
-              <rect x="4" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="7" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="13" y="4" width="2" height="12" fill="#1a1a1a"/>
-              <rect x="16" y="4" width="2" height="12" fill="#1a1a1a"/>
-            </svg>
-          </div>
+          <div className="mx-auto mb-5 grid h-11 w-11 place-items-center border border-[#8fa39e] text-xl text-[#173c38]">♩</div>
           <h1 className="text-2xl font-display font-semibold text-ink-900 mb-2">
-            {mode === 'login' ? 'Admin Login' : 'Create Account'}
+            {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h1>
           <p className="text-ink-600 text-sm">
-            {mode === 'login' ? "Login to access your dashboard" : "Sign up for a new account"}
+            {mode === 'login' ? "Sign in to manage the studio." : "Set up your studio access."}
           </p>
         </div>
 
@@ -105,7 +100,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent"
+              className="w-full border border-[#aab8b4] bg-white px-4 py-3 focus:border-[#173c38] focus:outline-none focus:ring-2 focus:ring-[#173c38]/15"
               placeholder="your@email.com"
               disabled={loading}
             />
@@ -121,7 +116,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent"
+              className="w-full border border-[#aab8b4] bg-white px-4 py-3 focus:border-[#173c38] focus:outline-none focus:ring-2 focus:ring-[#173c38]/15"
               placeholder="••••••••"
               disabled={loading}
               minLength={6}
@@ -139,7 +134,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-6 py-3 bg-piano-accent text-piano-white rounded-lg hover:bg-piano-highlight transition-colors disabled:opacity-50 font-medium"
+            className="w-full bg-[#173c38] px-6 py-3 font-medium text-white transition-colors hover:bg-[#24554f] disabled:opacity-50"
           >
             {loading ? (mode === 'login' ? "Logging in..." : "Creating account...") : (mode === 'login' ? "Login" : "Sign Up")}
           </button>
@@ -153,18 +148,13 @@ export default function LoginPage() {
               setMode(mode === 'login' ? 'register' : 'login');
               setError(null);
             }}
-            className="text-sm text-piano-accent hover:text-piano-highlight transition-colors"
+            className="text-sm font-medium text-[#2d665f] hover:text-[#173c38]"
           >
             {mode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Login"}
           </button>
         </div>
 
-        {/* Supabase Auth Notice */}
-        <div className="mt-6 p-3 bg-surface-50 rounded-lg">
-          <p className="text-xs text-ink-600 text-center">
-            🔒 Powered by Supabase Auth
-          </p>
-        </div>
+      </div>
       </div>
     </div>
   );

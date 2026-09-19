@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { APP_CONFIG } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,16 +61,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (slots.some(slot => !slot?.start_time || Number.isNaN(Date.parse(slot.start_time)))) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Invalid slot start time' } },
+        { status: 400 }
+      );
+    }
+
+    const normalizedSlots = slots.map(slot => {
+      const start = new Date(slot.start_time);
+      return {
+        start_time: start.toISOString(),
+        end_time: new Date(start.getTime() + APP_CONFIG.slotDuration * 60_000).toISOString(),
+        is_available: true,
+        created_from_pattern: false,
+      };
+    });
+
     const { data, error } = await supabaseAdmin
       .from('slots')
-      .insert(
-        slots.map(slot => ({
-          start_time: slot.start_time,
-          end_time: slot.end_time,
-          is_available: true,
-          created_from_pattern: false,
-        }))
-      )
+      .insert(normalizedSlots)
       .select();
 
     if (error) {

@@ -183,7 +183,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-ink-600">Slot Duration</span>
-              <span className="text-ink-900">60 minutes</span>
+              <span className="text-ink-900">45 minutes</span>
             </div>
           </div>
         </div>

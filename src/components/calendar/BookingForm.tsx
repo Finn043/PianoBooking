@@ -1,237 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarSlot } from "@/types";
 import { format } from "date-fns";
+import type { CalendarSlot } from "@/types";
 
-interface BookingFormProps {
-  slot: CalendarSlot;
-  userTimezone: string;
-  onClose: () => void;
-}
+interface BookingFormProps { slot: CalendarSlot; userTimezone: string; onClose: () => void; }
 
 export function BookingForm({ slot, userTimezone, onClose }: BookingFormProps) {
-  const [formData, setFormData] = useState({
-    studentName: "",
-    studentEmail: "",
-    packageId: "",
-    notes: "",
-  });
+  const [formData, setFormData] = useState({ studentName: "", studentEmail: "", packageId: "", notes: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [addToCalendarUrl, setAddToCalendarUrl] = useState<string | null>(null);
+  const [calendarUrl, setCalendarUrl] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setIsSubmitting(true); setError(null);
     try {
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slotId: slot.id,
-          studentName: formData.studentName,
-          studentEmail: formData.studentEmail,
-          packageId: formData.packageId || null,
-          notes: formData.notes || null,
-        }),
-      });
-
+      const response = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slotId: slot.id, studentName: formData.studentName, studentEmail: formData.studentEmail, packageId: formData.packageId || null, notes: formData.notes || null }) });
       const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Booking failed');
-      }
-
-      // Show success state with calendar link
-      setSuccess(true);
-      if (result.data?.addToCalendarUrl) {
-        setAddToCalendarUrl(result.data.addToCalendarUrl);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Booking failed');
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (!result.success) throw new Error(result.error?.message || "We couldn’t complete this booking.");
+      setCalendarUrl(result.data?.addToCalendarUrl || null); setSuccess(true);
+    } catch (caught) { setError(caught instanceof Error ? caught.message : "We couldn’t complete this booking."); }
+    finally { setIsSubmitting(false); }
   };
 
-  const formattedDate = format(slot.start, "EEEE, MMMM d, yyyy");
-  const formattedTime = `${format(slot.start, "h:mm a")} - ${format(slot.end, "h:mm a")}`;
+  const inputClass = "mt-2 w-full border border-[#aab8b4] bg-white px-4 py-3 text-base text-[#172523] outline-none transition placeholder:text-[#63736f] focus:border-[#173c38] focus:ring-2 focus:ring-[#173c38]/15 disabled:opacity-60";
 
-  if (success) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-piano-white rounded-lg p-8 max-w-md w-full animate-scale-in text-center">
-          <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-success" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
-            </svg>
-          </div>
-          <h3 className="text-2xl font-display font-semibold text-ink-900 mb-2">
-            Booking Confirmed!
-          </h3>
-          <p className="text-ink-700 mb-4">
-            A confirmation email has been sent to your inbox.
-          </p>
-
-          {addToCalendarUrl && (
-            <a
-              href={addToCalendarUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-piano-accent text-piano-white rounded-lg hover:bg-piano-highlight transition-colors font-medium mb-4"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/>
-              </svg>
-              Add to Google Calendar
-            </a>
-          )}
-
-          <button
-            onClick={onClose}
-            className="block w-full text-sm text-ink-500 hover:text-ink-700 transition-colors mt-2"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-piano-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto animate-slide-up">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-display font-semibold text-ink-900">
-            Book Your Lesson
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-ink-500 hover:text-ink-900 transition-colors p-1"
-            aria-label="Close"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Slot details */}
-        <div className="bg-surface-100 rounded-lg p-4 mb-6">
-          <div className="font-display font-semibold text-ink-900 mb-1">
-            {formattedDate}
-          </div>
-          <div className="text-ink-700">{formattedTime}</div>
-          <div className="text-sm text-ink-500 mt-2">
-            Your timezone: {userTimezone}
-          </div>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-ink-900 mb-2">
-              Name *
-            </label>
-            <input
-              type="text"
-              id="name"
-              required
-              value={formData.studentName}
-              onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent focus:border-transparent transition-all"
-              placeholder="Your name"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-ink-900 mb-2">
-              Email *
-            </label>
-            <input
-              type="email"
-              id="email"
-              required
-              value={formData.studentEmail}
-              onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent focus:border-transparent transition-all"
-              placeholder="your.email@example.com"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Package */}
-          <div>
-            <label htmlFor="package" className="block text-sm font-medium text-ink-900 mb-2">
-              Package (Optional)
-            </label>
-            <select
-              id="package"
-              value={formData.packageId}
-              onChange={(e) => setFormData({ ...formData, packageId: e.target.value })}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent focus:border-transparent transition-all"
-              disabled={isSubmitting}
-            >
-              <option value="">Select a package</option>
-              <option value="single">1 Session - $30</option>
-              <option value="bundle5">Bundle 5 Sessions - $140</option>
-              <option value="bundle10">Bundle 10 Sessions - $260</option>
-              <option value="4week2x">4-Week (2x/week) - $190</option>
-              <option value="4week3x">4-Week (3x/week) - $270</option>
-            </select>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-ink-900 mb-2">
-              Notes (Optional)
-            </label>
-            <textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent focus:border-transparent transition-all resize-none"
-              rows={3}
-              placeholder="Any additional notes..."
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Error message */}
-          {error && (
-            <div className="bg-error/10 border border-error/30 text-error px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="flex-1 px-6 py-3 border-2 border-muted text-ink-700 rounded-lg hover:bg-surface-100 transition-colors disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 px-6 py-3 bg-piano-accent text-piano-white rounded-lg hover:bg-piano-highlight transition-colors disabled:opacity-50 font-medium"
-            >
-              {isSubmitting ? "Submitting..." : "Confirm Booking"}
-            </button>
-          </div>
-        </form>
-      </div>
+  return <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[#071f1c]/75 p-4" role="dialog" aria-modal="true" aria-labelledby="booking-title" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="my-4 w-full max-w-xl bg-[#f7f8f5] p-6 shadow-[0_8px_0_rgba(7,31,28,.2)] animate-rise md:p-9">
+      {success ? <div className="py-5 text-center"><div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#d8e6a9] text-2xl text-[#173c38]">✓</div><h2 id="booking-title" className="mt-6 font-display text-4xl font-semibold text-[#173c38]">Your lesson is booked.</h2><p className="mx-auto mt-3 max-w-sm text-lg leading-8 text-[#536663]">We sent the details to {formData.studentEmail}. We look forward to seeing you at the piano.</p>{calendarUrl && <a href={calendarUrl} target="_blank" rel="noreferrer" className="mt-7 inline-flex bg-[#173c38] px-6 py-3 text-lg font-semibold text-white hover:bg-[#24554f]">Add to Google Calendar</a>}<button onClick={onClose} className="mt-5 block w-full py-2 text-base font-semibold text-[#405451]">Close</button></div> : <>
+        <div className="flex items-start justify-between gap-5 border-b border-[#cbd4d1] pb-6"><div><p className="text-base font-semibold text-[#2d665f]">{format(slot.start, "EEEE, MMMM d")}</p><h2 id="booking-title" className="mt-1 font-display text-4xl font-semibold text-[#173c38]">{format(slot.start, "h:mm a")} lesson</h2><p className="mt-2 text-base text-[#596a67]">45 minutes · {userTimezone}</p></div><button onClick={onClose} className="grid h-10 w-10 place-items-center border border-[#aab8b4] text-xl hover:bg-white" aria-label="Close booking form">×</button></div>
+        <form onSubmit={submit} className="mt-6 space-y-5 text-base"><div><label htmlFor="student-name" className="font-semibold">Your name</label><input id="student-name" required autoFocus value={formData.studentName} onChange={e => setFormData({ ...formData, studentName: e.target.value })} className={inputClass} placeholder="Name" disabled={isSubmitting} /></div><div><label htmlFor="student-email" className="font-semibold">Email address</label><input id="student-email" type="email" required value={formData.studentEmail} onChange={e => setFormData({ ...formData, studentEmail: e.target.value })} className={inputClass} placeholder="you@example.com" disabled={isSubmitting} /></div><div><label htmlFor="lesson-package" className="font-semibold">Lesson package <span className="font-normal text-[#63736f]">(optional)</span></label><select id="lesson-package" value={formData.packageId} onChange={e => setFormData({ ...formData, packageId: e.target.value })} className={inputClass} disabled={isSubmitting}><option value="">Choose later</option><option value="single">Single lesson · $30</option><option value="bundle5">Five lessons · $140</option><option value="bundle10">Ten lessons · $260</option><option value="4week2x">4 weeks, twice weekly · $190</option><option value="4week3x">4 weeks, three times weekly · $270</option></select></div><div><label htmlFor="notes" className="font-semibold">Anything Hannah should know? <span className="font-normal text-[#63736f]">(optional)</span></label><textarea id="notes" rows={3} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} className={`${inputClass} resize-none`} placeholder="Experience level, music interests or accessibility needs" disabled={isSubmitting} /></div>{error && <p role="alert" className="border border-[#a84c42] bg-[#fff7f5] px-4 py-3 text-base text-[#8e372f]">{error}</p>}<div className="flex flex-col-reverse gap-3 pt-2 text-lg sm:flex-row"><button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-3 font-semibold text-[#405451] hover:bg-white disabled:opacity-50 sm:w-1/3">Cancel</button><button type="submit" disabled={isSubmitting} className="bg-[#173c38] px-6 py-3 font-semibold text-white transition hover:bg-[#24554f] active:translate-y-px disabled:cursor-wait disabled:opacity-60 sm:w-2/3">{isSubmitting ? "Booking…" : "Confirm lesson"}</button></div></form>
+      </>}
     </div>
-  );
+  </div>;
 }

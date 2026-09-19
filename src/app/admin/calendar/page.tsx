@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { generateSlotsFromRange, formatSlotDate, formatSlotTime } from "@/lib/utils/slots";
+import { APP_CONFIG } from "@/lib/constants";
 import type { Slot } from "@/types/api";
 
 export default function AdminCalendarPage() {
@@ -43,20 +44,16 @@ export default function AdminCalendarPage() {
       if (inputMode === 'single') {
         // Single slot mode
         const [hours, minutes] = newSlot.startTime.split(':');
-        const [endHours, endMinutes] = newSlot.endTime.split(':');
-
         const startDate = new Date(newSlot.date);
         startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-        const endDate = new Date(newSlot.date);
-        endDate.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
+        const endDate = new Date(startDate.getTime() + APP_CONFIG.slotDuration * 60_000);
 
         slotsToCreate.push({
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
         });
       } else {
-        // Time range mode - auto-generate 1-hour slots
+        // Time range mode - auto-generate 45-minute slots
         const startDate = new Date(newSlot.date + 'T' + newSlot.startTime + ':00');
         const endDate = new Date(newSlot.date + 'T' + newSlot.endTime + ':00');
 
@@ -224,8 +221,8 @@ export default function AdminCalendarPage() {
 
               <div className="text-sm text-ink-600 mb-4 bg-surface-50 p-3 rounded-lg">
                 {inputMode === 'single'
-                  ? 'Create a single 1-hour slot'
-                  : 'Create multiple 1-hour slots from a time range (e.g., 1pm-5pm = 4 slots)'
+                  ? 'Create a single 45-minute slot'
+                  : 'Create consecutive 45-minute slots from a time range'
                 }
               </div>
 
@@ -269,11 +266,11 @@ export default function AdminCalendarPage() {
                     />
                   </div>
                   <p className="text-xs text-ink-500">
-                    💡 System will auto-generate 1-hour slots
+                    System will auto-generate 45-minute slots
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div>
                   <div>
                     <label className="block text-sm font-medium text-ink-900 mb-2">
                       Start Time
@@ -286,18 +283,7 @@ export default function AdminCalendarPage() {
                       className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-ink-900 mb-2">
-                      End Time
-                    </label>
-                    <input
-                      type="time"
-                      required
-                      value={newSlot.endTime}
-                      onChange={(e) => setNewSlot({ ...newSlot, endTime: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-100 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-piano-accent"
-                    />
-                  </div>
+                  <p className="mt-2 text-sm text-ink-500">End time is set automatically, 45 minutes later.</p>
                 </div>
               )}
 
