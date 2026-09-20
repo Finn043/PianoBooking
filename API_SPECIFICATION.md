@@ -45,7 +45,7 @@
   slots: [
     {
       start_time: string,  // ISO datetime
-      end_time?: string    // Accepted for compatibility; server normalizes to 45 minutes after start_time
+      end_time?: string    // Accepted for compatibility; server normalizes to 60 minutes after start_time
     }
   ]
 }
@@ -62,7 +62,7 @@
 **Consumer:**
 - `src/app/admin/calendar/page.tsx`
 
-**Slot duration:** Every newly created slot is normalized server-side to 45 minutes.
+**Slot duration:** Every newly created slot is normalized server-side to 60 minutes.
 
 ---
 
