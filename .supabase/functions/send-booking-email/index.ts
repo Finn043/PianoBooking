@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = "onboarding@resend.dev";
 
 interface BookingEmailData {
   bookingId: string;
@@ -9,14 +10,13 @@ interface BookingEmailData {
   studentEmail: string;
   startTime: string;
   endTime: string;
-  organizerEmail?: string;
 }
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
 }[character] || character));
 
-const escapeIcs = (value: string) => value.replace(/([\\;,])/g, '\\$1').replace(/\r?\n/g, '\\n');
+const escapeIcsParameter = (value: string) => value.replace(/["\r\n]/g, '');
 const toIcsDate = (value: string) => new Date(value).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const toBase64 = (value: string) => {
   const bytes = new TextEncoder().encode(value);
@@ -38,10 +38,10 @@ export default {
     }
 
     try {
-      const { bookingId, studentName, studentEmail, startTime, endTime, organizerEmail }: BookingEmailData = await req.json();
+      const { bookingId, studentName, studentEmail, startTime, endTime }: BookingEmailData = await req.json();
 
       // Validate required fields
-      if (!bookingId || !studentName || !studentEmail || !startTime || !endTime || !organizerEmail) {
+      if (!bookingId || !studentName || !studentEmail || !startTime || !endTime) {
         return Response.json({ error: "Missing required fields" }, { status: 400 });
       }
 
@@ -60,19 +60,19 @@ export default {
       const ics = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//Hannah Piano Studio//Booking//EN',
+        'PRODID:-//Hannah Piano Class//Booking System//EN',
         'CALSCALE:GREGORIAN',
         'METHOD:REQUEST',
         'BEGIN:VEVENT',
-        `UID:${bookingId}@hannah-piano-booking.netlify.app`,
+        `UID:piano-lesson-${bookingId}@hannah-piano-booking.netlify.app`,
         `DTSTAMP:${toIcsDate(new Date().toISOString())}`,
         `DTSTART:${toIcsDate(startTime)}`,
         `DTEND:${toIcsDate(endTime)}`,
-        'SUMMARY:Piano Lesson - Hannah Piano Studio',
+        'SUMMARY:Piano Lesson',
         'LOCATION:Hannah Piano Studio',
-        'DESCRIPTION:Piano lesson. Please respond to this invitation to confirm your attendance.',
-        `ORGANIZER;CN=Hannah Piano Studio:mailto:${organizerEmail}`,
-        `ATTENDEE;CN=${escapeIcs(studentName)};RSVP=TRUE;PARTSTAT=NEEDS-ACTION:mailto:${studentEmail}`,
+        'DESCRIPTION:Piano lesson with Hannah Piano Class.',
+        `ORGANIZER;CN="Hannah Piano Class":mailto:${FROM_EMAIL}`,
+        `ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN="${escapeIcsParameter(studentName)}":mailto:${studentEmail}`,
         'STATUS:CONFIRMED',
         'SEQUENCE:0',
         'END:VEVENT',
@@ -129,15 +129,18 @@ export default {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: "Hannah Piano Class <onboarding@resend.dev>",
+          from: `Hannah Piano Class <${FROM_EMAIL}>`,
           to: [studentEmail],
           subject: "Piano Lesson Booking Confirmed",
           html,
           attachments: [{
-            filename: 'piano-lesson.ics',
+            filename: 'invite.ics',
             content: toBase64(ics),
             content_type: 'text/calendar; method=REQUEST; charset=UTF-8',
           }],
+          headers: {
+            'Content-Class': 'urn:content-classes:calendarmessage',
+          },
         }),
       });
 

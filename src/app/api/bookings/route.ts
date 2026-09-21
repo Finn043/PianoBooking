@@ -132,20 +132,13 @@ export async function POST(request: NextRequest) {
     const lessonEndTime = new Date(
       new Date(slot.start_time).getTime() + APP_CONFIG.lessonDuration * 60_000
     ).toISOString();
-    let organizerEmail = APP_CONFIG.adminEmail;
-    if (!organizerEmail) {
-      const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-      organizerEmail = data.users[0]?.email || '';
-    }
-
     // Send a standard calendar invitation that supports accept/decline in email clients.
     await sendBookingConfirmationEmail(
       booking.id,
       booking.students.name,
       booking.students.email,
       booking.slots.start_time,
-      lessonEndTime,
-      organizerEmail
+      lessonEndTime
     );
 
     return NextResponse.json({
