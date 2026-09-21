@@ -120,11 +120,11 @@ Booked via Hannah's Piano Class`,
     location: 'https://share.google/j4vPx5cCYsHsUgVqk',
     start: {
       dateTime: startTime,
-      timeZone: 'Australia/Sydney',
+      timeZone: 'Australia/Melbourne',
     },
     end: {
       dateTime: endTime,
-      timeZone: 'Australia/Sydney',
+      timeZone: 'Australia/Melbourne',
     },
     attendees: [{ email: studentEmail }],
   };
@@ -214,7 +214,7 @@ export function generateAddToCalendarUrl(
     dates: `${formatForGCal(startTime)}/${formatForGCal(endTime)}`,
     details: `Piano lesson for ${studentName}\n\nBấm intercom 1702 và đi thang máy lên lầu 17\n\nBooked via Hannah's Piano Class`,
     location: 'https://share.google/j4vPx5cCYsHsUgVqk',
-    ctz: 'Australia/Sydney',
+    ctz: 'Australia/Melbourne',
   });
 
   return `https://calendar.google.com/calendar/render?${params}`;

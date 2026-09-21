@@ -25,7 +25,7 @@
       id: string,              // UUID
       start_time: string,      // ISO datetime (DB column)
       end_time: string,        // ISO datetime (DB column)
-      is_available: boolean    // DB column
+      is_available: boolean    // True while fewer than 2 active bookings exist
     }
   ]
 }
@@ -86,6 +86,7 @@
       status: "pending" | "confirmed" | "cancelled" | "completed",
       notes: string | null,
       google_calendar_event_id: string | null,
+      piano_number: 1 | 2,
       created_at: string,
       updated_at: string,
       slots: { slot_data },
@@ -103,7 +104,6 @@
   slotId: string,         // UUID
   studentName: string,
   studentEmail: string,
-  packageId?: string,     // Optional package identifier
   notes?: string
 }
 ```
@@ -121,6 +121,13 @@
 
 **Consumer:**
 - `src/components/calendar/BookingForm.tsx`
+
+**Booking rules:**
+- Each slot is a 60-minute operating window with capacity for 2 active bookings, one per piano.
+- The student lesson and attached calendar invitation last 45 minutes from `start_time`.
+- Reservation is transactional: the slot remains available after the first booking and closes after the second.
+- The confirmation email includes an `.ics` invitation; no Google Calendar URL is returned.
+- Student-facing times use `Australia/Melbourne`.
 
 ---
 
@@ -210,6 +217,7 @@
 - `notes` (TEXT)
 - `google_calendar_event_id` (VARCHAR) - Admin's calendar event
 - `student_calendar_event_id` (VARCHAR) - Student's calendar event
+- `piano_number` (SMALLINT) - Allocated piano (`1` or `2`), unique per active booking in a slot
 - `created_at` (TIMESTAMPTZ)
 - `updated_at` (TIMESTAMPTZ)
 

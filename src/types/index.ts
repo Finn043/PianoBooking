@@ -24,6 +24,5 @@ export interface BookingFormData {
   slotId: string;
   studentName: string;
   studentEmail: string;
-  packageId?: string;
   notes?: string;
 }

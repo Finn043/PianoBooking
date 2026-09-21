@@ -42,6 +42,7 @@ export interface Booking {
   session_number?: number;
   notes?: string;
   google_calendar_event_id?: string;
+  piano_number: 1 | 2;
   created_at: string;
   updated_at: string;
 }
@@ -87,7 +88,6 @@ export interface CreateBookingRequest {
   slotId: string;
   studentName: string;
   studentEmail: string;
-  packageId?: string;
   notes?: string;
 }
 

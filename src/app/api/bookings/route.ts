@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { APP_CONFIG } from '@/lib/constants';
-import { createCalendarEvent, refreshAccessToken, formatBookingAsCalendarEvent, generateAddToCalendarUrl } from '@/lib/google-calendar/client';
 import { sendBookingConfirmationEmail } from '@/lib/email/notifications';
 
 export async function GET(request: NextRequest) {
@@ -44,12 +43,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slotId, studentName, studentEmail, packageId, notes } = body;
+    const slotId = typeof body.slotId === 'string' ? body.slotId : '';
+    const studentName = typeof body.studentName === 'string' ? body.studentName.trim() : '';
+    const studentEmail = typeof body.studentEmail === 'string' ? body.studentEmail.trim().toLowerCase() : '';
+    const notes = typeof body.notes === 'string' ? body.notes.trim() : '';
 
     // Validate input
-    if (!slotId || !studentName || !studentEmail) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slotId) || !studentName || studentName.length > 100 || !/^\S+@\S+\.\S+$/.test(studentEmail) || studentEmail.length > 255 || notes.length > 2000) {
       return NextResponse.json(
-        { success: false, error: { message: 'Missing required fields' } },
+        { success: false, error: { message: 'Invalid booking details' } },
         { status: 400 }
       );
     }
@@ -64,21 +66,6 @@ export async function POST(request: NextRequest) {
     if (slotError || !slot || !slot.is_available) {
       return NextResponse.json(
         { success: false, error: { message: 'Slot not available' } },
-        { status: 400 }
-      );
-    }
-
-    // Check if slot already has a booking
-    const { data: existingBooking } = await supabaseAdmin
-      .from('bookings')
-      .select('id')
-      .eq('slot_id', slotId)
-      .neq('status', 'cancelled')
-      .single();
-
-    if (existingBooking) {
-      return NextResponse.json(
-        { success: false, error: { message: 'Slot already booked' } },
         { status: 400 }
       );
     }
@@ -115,19 +102,24 @@ export async function POST(request: NextRequest) {
       studentId = newStudent.id;
     }
 
-    // Check auto-confirm setting
-    const autoConfirm = true; // Default to true for now
+    // The database locks the slot while assigning one of the two pianos.
+    const { data: bookingId, error: reservationError } = await supabaseAdmin.rpc('reserve_piano_slot', {
+      p_slot_id: slotId,
+      p_student_id: studentId,
+      p_notes: notes || null,
+    });
 
-    // Create booking
+    if (reservationError || !bookingId) {
+      return NextResponse.json(
+        { success: false, error: { message: reservationError?.message || 'Slot not available' } },
+        { status: 409 }
+      );
+    }
+
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .insert({
-        slot_id: slotId,
-        student_id: studentId,
-        status: autoConfirm ? 'confirmed' : 'pending',
-        notes: notes || null,
-      })
       .select('*, slots(*), students(*)')
+      .eq('id', bookingId)
       .single();
 
     if (bookingError || !booking) {
@@ -137,105 +129,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update slot availability
-    await supabaseAdmin
-      .from('slots')
-      .update({ is_available: false })
-      .eq('id', slotId);
+    const lessonEndTime = new Date(
+      new Date(slot.start_time).getTime() + APP_CONFIG.lessonDuration * 60_000
+    ).toISOString();
+    let organizerEmail = APP_CONFIG.adminEmail;
+    if (!organizerEmail) {
+      const { data } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+      organizerEmail = data.users[0]?.email || '';
+    }
 
-    // Generate calendar URL for email
-    const calendarUrl = generateAddToCalendarUrl(
-      studentName,
-      slot.start_time,
-      slot.end_time
-    );
-
-    // Send booking confirmation email with calendar link
+    // Send a standard calendar invitation that supports accept/decline in email clients.
     await sendBookingConfirmationEmail(
+      booking.id,
       booking.students.name,
       booking.students.email,
       booking.slots.start_time,
-      booking.slots.end_time,
-      calendarUrl
-    );
-
-    // Create Google Calendar event on admin's calendar if auto-confirmed
-    // Admin is the host (organizer), student is attendee (guest)
-    // Google automatically sends a calendar invite to the student via sendUpdates: 'all'
-    let adminGoogleEventId = null;
-
-    if (autoConfirm) {
-      try {
-        // Find admin by google_calendar_enabled flag (the user who connected Google Calendar)
-        const { data: adminUser } = await supabaseAdmin
-          .from('students')
-          .select('email, google_access_token, google_refresh_token, google_token_expires_at, google_calendar_id')
-          .eq('google_calendar_enabled', true)
-          .limit(1)
-          .single();
-
-        if (adminUser?.google_access_token) {
-          let accessToken = adminUser.google_access_token;
-
-          // Check if token needs refresh
-          if (adminUser.google_token_expires_at && new Date(adminUser.google_token_expires_at) < new Date()) {
-            const tokens = await refreshAccessToken(adminUser.google_refresh_token);
-            accessToken = tokens.access_token;
-
-            await supabaseAdmin
-              .from('students')
-              .update({
-                google_access_token: tokens.access_token,
-                google_refresh_token: tokens.refresh_token || adminUser.google_refresh_token,
-                google_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-              })
-              .eq('email', adminUser.email);
-          }
-
-          // Create event: admin = host, student = attendee
-          // Google sends calendar invite to student automatically
-          const eventData = formatBookingAsCalendarEvent(
-            studentName,
-            studentEmail,
-            slot.start_time,
-            slot.end_time
-          );
-
-          adminGoogleEventId = await createCalendarEvent(accessToken, eventData);
-          console.log('Admin calendar event created:', adminGoogleEventId);
-
-          // Store event ID on booking
-          await supabaseAdmin
-            .from('bookings')
-            .update({ google_calendar_event_id: adminGoogleEventId })
-            .eq('id', booking.id);
-        } else {
-          console.log('Admin has not connected Google Calendar');
-        }
-      } catch (calendarError) {
-        console.error('Google Calendar sync error:', calendarError);
-        // Don't fail booking if calendar sync fails
-      }
-    }
-
-    // Generate "Add to Google Calendar" URL for student
-    const addToCalendarUrl = generateAddToCalendarUrl(
-      studentName,
-      slot.start_time,
-      slot.end_time
+      lessonEndTime,
+      organizerEmail
     );
 
     return NextResponse.json({
       success: true,
       data: {
         booking: { ...booking },
-        message: autoConfirm
-          ? 'Booking confirmed!'
-          : 'Booking submitted! See you in class.',
-        calendarSync: {
-          admin: !!adminGoogleEventId,
-        },
-        addToCalendarUrl,
+        message: 'Booking confirmed!',
       },
     });
   } catch (error) {

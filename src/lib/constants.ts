@@ -1,6 +1,8 @@
 export const APP_CONFIG = {
-  slotDuration: 60, // minutes
-  defaultTimeZone: 'Australia/Sydney',
+  slotDuration: 60, // Includes a 15-minute break after each lesson
+  lessonDuration: 45,
+  slotCapacity: 2,
+  defaultTimeZone: 'Australia/Melbourne',
   googleCalendarId: process.env.GOOGLE_CALENDAR_ID || 'primary',
   adminEmail: process.env.ADMIN_EMAIL || '',
   lowSessionThreshold: 2, // Alert when remaining sessions <= 2

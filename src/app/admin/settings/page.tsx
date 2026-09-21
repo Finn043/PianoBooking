@@ -159,9 +159,7 @@ export default function SettingsPage() {
             </div>
             {googleConnected && (
               <div className="text-sm text-ink-600">
-                ✓ Your calendar will receive all booking events
-                <br />
-                <span className="text-xs">Students can also connect their calendars to receive invites</span>
+                ✓ Connected for teacher-side calendar tools
               </div>
             )}
           </div>
@@ -179,7 +177,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-ink-600">Timezone</span>
-              <span className="text-ink-900">Australia/Sydney</span>
+              <span className="text-ink-900">Australia/Melbourne</span>
             </div>
             <div className="flex justify-between">
               <span className="text-ink-600">Slot Duration</span>

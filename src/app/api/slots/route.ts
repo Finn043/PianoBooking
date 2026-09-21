@@ -14,14 +14,10 @@ export async function GET(request: NextRequest) {
 
     let query = supabaseAdmin
       .from('slots')
-      .select('*, bookings(*, students(*))')
+      .select('*, bookings(status)')
       .gte('start_time', startDate || now.toISOString())
       .lte('start_time', maxDate.toISOString())
       .order('start_time');
-
-    if (availableOnly) {
-      query = query.eq('is_available', true);
-    }
 
     const { data, error } = await query;
 
@@ -37,8 +33,8 @@ export async function GET(request: NextRequest) {
       id: slot.id,
       start_time: slot.start_time,
       end_time: slot.end_time,
-      is_available: slot.is_available,
-    })) || [];
+      is_available: slot.is_available && slot.bookings.filter((booking: { status: string }) => booking.status !== 'cancelled').length < APP_CONFIG.slotCapacity,
+    })).filter(slot => !availableOnly || slot.is_available) || [];
 
     return NextResponse.json({ success: true, data: slots });
   } catch (error) {
